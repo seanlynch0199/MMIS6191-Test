@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { SiteHeader } from '@/components/SiteHeader'
 import { SiteFooter } from '@/components/SiteFooter'
+import { Providers } from './providers'
 import { siteConfig } from '@/data/site'
 import './globals.css'
 
@@ -54,13 +55,15 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
-        <div className="min-h-screen flex flex-col">
-          <SiteHeader />
-          <main className="flex-1">
-            {children}
-          </main>
-          <SiteFooter />
-        </div>
+        <Providers>
+          <div className="min-h-screen flex flex-col">
+            <SiteHeader />
+            <main className="flex-1">
+              {children}
+            </main>
+            <SiteFooter />
+          </div>
+        </Providers>
       </body>
     </html>
   )

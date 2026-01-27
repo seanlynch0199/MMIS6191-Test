@@ -161,6 +161,14 @@ export interface SpectatorSpot {
   accessibility?: string
 }
 
+export interface Athlete {
+  id: number
+  name: string
+  grade: number
+  personal_record_seconds: number
+  created_at: string
+}
+
 export interface StatHighlight {
   label: string
   value: string | number

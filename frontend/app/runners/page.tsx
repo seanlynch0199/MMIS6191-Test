@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Breadcrumbs } from '@/components/Breadcrumbs'
 import { RunnerCard } from '@/components/RunnerCard'
+import { Button } from '@/components/ui/Button'
+import { fetchAthletes } from '@/lib/api'
 import { runners } from '@/data/runners'
 import { TeamLevel, Gender, EventFocus } from '@/data/types'
 
@@ -13,30 +16,43 @@ export default function RunnersPage() {
   const [grade, setGrade] = useState<number | 'all'>('all')
   const [eventFocus, setEventFocus] = useState<EventFocus | 'all'>('all')
 
+  // Fetch athletes from backend API
+  const {
+    data: athletes,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['athletes'],
+    queryFn: fetchAthletes,
+  })
+
+  // Filter local runner data (existing behavior)
   const filteredRunners = useMemo(() => {
     return runners.filter(runner => {
-      // Search filter
       if (search) {
         const searchLower = search.toLowerCase()
         const fullName = `${runner.firstName} ${runner.lastName}`.toLowerCase()
         if (!fullName.includes(searchLower)) return false
       }
-
-      // Team level filter
       if (teamLevel !== 'all' && runner.teamLevel !== teamLevel) return false
-
-      // Gender filter
       if (gender !== 'all' && runner.gender !== gender) return false
-
-      // Grade filter
       if (grade !== 'all' && runner.grade !== grade) return false
-
-      // Event focus filter
       if (eventFocus !== 'all' && runner.eventFocus !== eventFocus) return false
-
       return true
     })
   }, [search, teamLevel, gender, grade, eventFocus])
+
+  // Filter API athletes by search and grade
+  const filteredAthletes = useMemo(() => {
+    if (!athletes) return []
+    return athletes.filter(athlete => {
+      if (search && !athlete.name.toLowerCase().includes(search.toLowerCase())) return false
+      if (grade !== 'all' && athlete.grade !== grade) return false
+      return true
+    })
+  }, [athletes, search, grade])
 
   const grades = [6, 7, 8, 9, 10, 11, 12]
 
@@ -151,7 +167,7 @@ export default function RunnersPage() {
         </div>
       </div>
 
-      {/* Runner Grid */}
+      {/* Runner Grid (local data) */}
       {filteredRunners.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredRunners.map((runner) => (
@@ -175,6 +191,59 @@ export default function RunnersPage() {
           </button>
         </div>
       )}
+
+      {/* Athletes from API */}
+      <div className="mt-12">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+          Athletes (from database)
+        </h2>
+
+        {isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 animate-pulse"
+              >
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-3" />
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4" />
+                <div className="border-t border-gray-100 dark:border-gray-700 pt-4 mt-4">
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-2" />
+                  <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {isError && (
+          <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
+            <p className="text-gray-500 dark:text-gray-400 mb-1">
+              Failed to load athletes.
+            </p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+              {error instanceof Error ? error.message : 'An unexpected error occurred.'}
+            </p>
+            <Button variant="outline" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {athletes && filteredAthletes.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredAthletes.map((athlete) => (
+              <RunnerCard key={athlete.id} athlete={athlete} />
+            ))}
+          </div>
+        )}
+
+        {athletes && filteredAthletes.length === 0 && (
+          <p className="text-center py-8 text-gray-500 dark:text-gray-400">
+            No athletes match your search.
+          </p>
+        )}
+      </div>
     </div>
   )
 }

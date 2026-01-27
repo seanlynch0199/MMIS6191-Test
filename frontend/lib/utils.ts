@@ -179,6 +179,15 @@ export async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 /**
+ * Format total seconds into a time string (e.g., 1005 → "16:45")
+ */
+export function formatSecondsToTime(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+/**
  * Get event focus display name
  */
 export function getEventFocusName(focus: string): string {
