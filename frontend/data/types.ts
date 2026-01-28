@@ -192,3 +192,19 @@ export interface StatHighlight {
   description?: string
   icon?: string
 }
+
+// Admin types
+export interface AdminAthlete {
+  id: string
+  firstName: string
+  lastName: string
+  grade?: number
+  events?: string[]
+  team?: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type AdminAthleteCreate = Omit<AdminAthlete, 'id' | 'createdAt' | 'updatedAt'>
+
+export type AdminAthleteUpdate = Partial<AdminAthleteCreate>
