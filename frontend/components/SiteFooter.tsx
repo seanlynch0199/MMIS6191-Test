@@ -49,6 +49,11 @@ export function SiteFooter() {
                   Home Meet
                 </Link>
               </li>
+              <li>
+                <Link href="/admin" className="text-gray-600 dark:text-gray-400 hover:text-prBlue-500 dark:hover:text-prBlue-300">
+                  Admin
+                </Link>
+              </li>
             </ul>
           </div>
 
