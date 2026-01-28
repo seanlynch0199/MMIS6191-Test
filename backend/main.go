@@ -127,7 +127,7 @@ func athletesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id, name, grade, personal_record_seconds, created_at FROM athletes")
+	rows, err := db.Query("SELECT id, name, grade, personal_record_seconds, created_at FROM athletes ORDER BY created_at DESC")
 	if err != nil {
 		log.Printf("Error querying athletes: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -156,7 +156,7 @@ func meetsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id, name, meet_date, location, created_at FROM meets")
+	rows, err := db.Query("SELECT id, name, meet_date, location, created_at FROM meets ORDER BY meet_date ASC")
 	if err != nil {
 		log.Printf("Error querying meets: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -187,7 +187,7 @@ func resultsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT id, athlete_id, meet_id, time_seconds, place_overall, created_at FROM results")
+	rows, err := db.Query("SELECT id, athlete_id, meet_id, time_seconds, place_overall, created_at FROM results ORDER BY created_at DESC")
 	if err != nil {
 		log.Printf("Error querying results: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
