@@ -1,21 +1,32 @@
+'use client'
+
 import Link from 'next/link'
+import { useQuery } from '@tanstack/react-query'
 import { siteConfig } from '@/data/site'
-import { runners, getCaptains } from '@/data/runners'
-import { schedules, getUpcomingMeets } from '@/data/schedules'
 import { StatCard } from '@/components/StatCard'
-import { ApiMeetsPreview } from '@/components/ApiMeetsPreview'
-import { formatDateShort } from '@/lib/utils'
+import { Button } from '@/components/ui/Button'
+import { fetchMeets, fetchAthletes, fetchResults } from '@/lib/api'
 
 export default function HomePage() {
-  const upcomingMeetsXC = getUpcomingMeets('xc', 5)
-  const upcomingMeetsTrack = getUpcomingMeets('track', 5)
-  const upcomingMeets = [...upcomingMeetsXC, ...upcomingMeetsTrack]
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 5)
+  const { data: meets, isLoading: meetsLoading, isError: meetsError, error: meetsErr, refetch: refetchMeets } = useQuery({
+    queryKey: ['meets'],
+    queryFn: fetchMeets,
+  })
 
-  const captains = getCaptains()
-  const hsRunners = runners.filter(r => r.teamLevel === 'hs')
-  const totalPRs = runners.reduce((acc, r) => acc + r.prs.length, 0)
+  const { data: athletes } = useQuery({
+    queryKey: ['athletes'],
+    queryFn: fetchAthletes,
+  })
+
+  const { data: results } = useQuery({
+    queryKey: ['results'],
+    queryFn: fetchResults,
+  })
+
+  // Sort meets by date ascending, take next 5
+  const upcomingMeets = meets
+    ? [...meets].sort((a, b) => a.meet_date.localeCompare(b.meet_date)).slice(0, 5)
+    : []
 
   return (
     <div>
@@ -77,63 +88,75 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {upcomingMeets.length > 0 ? (
+          {meetsLoading && (
             <div className="grid gap-4">
-              {upcomingMeets.map((meet) => (
+              {[1, 2, 3, 4].map((i) => (
                 <div
-                  key={meet.id}
-                  className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                  key={i}
+                  className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 animate-pulse"
                 >
                   <div className="flex-shrink-0 w-16 text-center">
-                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {formatDateShort(meet.date).split(' ')[0]}
-                    </div>
-                    <div className="text-2xl font-bold text-prBlue-600 dark:text-prBlue-400">
-                      {formatDateShort(meet.date).split(' ')[1]}
-                    </div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-10 mx-auto mb-1" />
+                    <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded w-8 mx-auto" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      {meet.name}
-                      {meet.isHomeMeet && (
-                        <span className="ml-2 px-2 py-0.5 text-xs font-medium bg-prGreen-100 dark:bg-prGreen-900 text-prGreen-700 dark:text-prGreen-300 rounded">
-                          HOME
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{meet.location}</p>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <span className="px-2 py-1 text-xs font-medium bg-prBlue-100 dark:bg-prBlue-900 text-prBlue-700 dark:text-prBlue-300 rounded uppercase">
-                      {meet.season}
-                    </span>
+                    <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-2/3 mb-2" />
+                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
+          )}
+
+          {meetsError && (
+            <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <p className="text-gray-500 dark:text-gray-400 mb-1">Failed to load meets.</p>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+                {meetsErr instanceof Error ? meetsErr.message : 'An unexpected error occurred.'}
+              </p>
+              <Button variant="outline" onClick={() => refetchMeets()}>
+                Retry
+              </Button>
+            </div>
+          )}
+
+          {meets && upcomingMeets.length > 0 && (
+            <div className="grid gap-4">
+              {upcomingMeets.map((meet) => {
+                const date = new Date(meet.meet_date + 'T00:00:00')
+                const month = date.toLocaleDateString('en-US', { month: 'short' })
+                const day = date.getDate()
+
+                return (
+                  <div
+                    key={meet.id}
+                    className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex-shrink-0 w-16 text-center">
+                      <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        {month}
+                      </div>
+                      <div className="text-2xl font-bold text-prBlue-600 dark:text-prBlue-400">
+                        {day}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {meet.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{meet.location}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {meets && upcomingMeets.length === 0 && (
             <p className="text-gray-500 dark:text-gray-400 text-center py-8">
               No upcoming meets scheduled. Check back soon!
             </p>
           )}
-        </div>
-      </section>
-
-      {/* Meets from Database */}
-      <section className="pb-16 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-              Meets (from database)
-            </h2>
-            <Link
-              href="/schedules"
-              className="text-prBlue-600 dark:text-prBlue-400 hover:underline font-medium"
-            >
-              View Full Schedule
-            </Link>
-          </div>
-          <ApiMeetsPreview />
         </div>
       </section>
 
@@ -145,26 +168,26 @@ export default function HomePage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
-              label="State Qualifiers"
-              value="12"
-              description="2024 Season"
+              label="Active Athletes"
+              value={athletes?.length ?? '...'}
+              description="In database"
               variant="highlight"
             />
             <StatCard
-              label="Personal Records"
-              value={totalPRs}
+              label="Scheduled Meets"
+              value={meets?.length ?? '...'}
               description="This season"
               variant="accent"
             />
             <StatCard
-              label="Team Captains"
-              value={captains.length}
-              description="Leading the pack"
+              label="Race Results"
+              value={results?.length ?? '...'}
+              description="Recorded"
             />
             <StatCard
-              label="Active Runners"
-              value={runners.length}
-              description="HS & MS programs"
+              label="State Qualifiers"
+              value="12"
+              description="2024 Season"
             />
           </div>
         </div>
@@ -193,7 +216,7 @@ export default function HomePage() {
             </Link>
 
             <Link
-              href="/high-school/results/boys"
+              href="/results"
               className="group p-6 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-prBlue-300 dark:hover:border-prBlue-600 transition-all hover:shadow-lg"
             >
               <div className="w-12 h-12 bg-prGreen-100 dark:bg-prGreen-900 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">

@@ -37,7 +37,7 @@ export default function ResultsPage() {
       <Breadcrumbs />
 
       <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-        Results (from database)
+        Results
       </h1>
       <p className="text-gray-600 dark:text-gray-400 mb-8">
         Individual race results pulled from the database. Times, placements, and meet details for every recorded performance.
